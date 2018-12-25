@@ -2,6 +2,7 @@ import pygame
 import os
 
 import GameObject
+import Camera
 
 
 class Tile(GameObject.Object):
@@ -14,6 +15,9 @@ class Map(GameObject.Object):
         self.map = []
         self.sprite = None
         self.sprite_size = sprite_size
+        self.camera = Camera.Camera()
+        self.tracking = None
+
         with open(path, 'r') as in_file:
             tileset_path = in_file.readline().strip()
             tileset_path = os.path.join(os.path.dirname(path), tileset_path)
@@ -56,3 +60,15 @@ class Map(GameObject.Object):
             self.redraw()
 
         return self.sprite
+
+    def draw(self, window):
+        if self.tracking:
+            self.camera.center(self.tracking, window)
+
+        self.x = -self.camera.x
+        self.y = -self.camera.y
+
+        super().draw(window)
+
+    def track(self, obj):
+        self.tracking = obj

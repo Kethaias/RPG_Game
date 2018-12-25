@@ -13,6 +13,7 @@ def main(_):
     pygame.init()
 
     window = GameWindow.Window('RPG Game', 400, 300)
+
     input_handler = InputHandler.Input()
     clock = pygame.time.Clock()
     image_manager = ImageManager.ImageManager()
@@ -22,8 +23,12 @@ def main(_):
     my_object = GameObject.PlayableCharacter(basic_sprite, 10, 10, 32, 32)
     map = GameMap.Map(image_manager, os.path.join(resources_location, 'map.txt'), tileset_width=23)
 
-    window.add_object('map_1', map)
-    window.add_object('basic_object', my_object)
+    window.add_object('basic_object', my_object, GameWindow.Window.LAYER_FOREGROUND)
+    window.add_object('map_1', map, GameWindow.Window.LAYER_BACKGROUND)
+
+    map.track(my_object)
+
+    my_object.map = map
 
     while not input_handler.exiting:
         clock.tick(30)

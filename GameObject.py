@@ -8,6 +8,7 @@ class Object:
         self.sprite = sprite
         self.width = width or self.get_sprite().get_width()
         self.height = height or self.get_sprite().get_height()
+        self.map = None
 
     def move(self, x, y):
         self.x += x
@@ -18,7 +19,7 @@ class Object:
         self.y = y
 
     def draw(self, window):
-        window.blit(self.get_sprite(), self.top_left())
+        window.blit(self.get_sprite(), self.top_left(adjust_camera=True))
 
     def get_sprite(self):
         return self.sprite
@@ -29,7 +30,10 @@ class Object:
     def _size(self):
         return self.width, self.height
 
-    def top_left(self):
+    def top_left(self, adjust_camera=False):
+        if adjust_camera and self.map and self.map.camera:
+            return self.x - self.map.camera.x, self.y - self.map.camera.y
+
         return self.x, self.y
 
     def top_right(self):
@@ -41,7 +45,16 @@ class Object:
     def bottom_right(self):
         return self.x + self.width, self.y + self.height
 
+    def center(self):
+        return (self.x + self.width) // 2, (self.y + self.height) // 2
+
     def update(self, window, input_handler):
+        pass
+
+    def added(self, window):
+        pass
+
+    def removed(self, window):
         pass
 
 
