@@ -6,6 +6,7 @@ import GameWindow
 import GameObject
 import InputHandler
 import ImageManager
+import GameMap
 
 
 def main(_):
@@ -19,6 +20,9 @@ def main(_):
 
     basic_sprite = image_manager.get_sprite(os.path.join(resources_location, 'basic.png'), 4, 4, 32, 32)
     my_object = GameObject.PlayableCharacter(basic_sprite, 10, 10, 32, 32)
+    map = GameMap.Map(image_manager, os.path.join(resources_location, 'map.txt'), tileset_width=23)
+
+    window.add_object('map_1', map)
     window.add_object('basic_object', my_object)
 
     while not input_handler.exiting:

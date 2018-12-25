@@ -14,14 +14,18 @@ class ImageManager:
         self.images[path] = image
         return image
 
-    def get_sprite(self, path, x, y, sprite_width, sprite_height):
+    def get_sprite(self, path, x, y=None, sprite_width=None, sprite_height=None):
         return ImageManager.split(self.get_image(path), x, y, sprite_width, sprite_height)
 
     @staticmethod
-    def split(img, x, y, convert_sprite_width=None, convert_sprite_height=None):
+    def split(img, x, y=None, convert_sprite_width=None, convert_sprite_height=None):
+        sprite_width = img.get_width() // x
+        if y is None:
+            y = img.get_height() // sprite_width
+
+        sprite_height = img.get_height() // y
+
         ret = []
-        sprite_width = img.get_width() / x
-        sprite_height = img.get_height() / y
         for x_pos in range(x):
             for y_pos in range(y):
                 if x_pos == 0:
