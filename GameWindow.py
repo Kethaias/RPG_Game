@@ -11,21 +11,23 @@ class Window:
     def __init__(self, name, width, height, background_color=(0, 0, 0)):
         self._window = pygame.display.set_mode((width, height))
         pygame.display.set_caption(name)
+        pygame.display.set_mode((0, 0), pygame.FULLSCREEN | pygame.DOUBLEBUF)
         self.height = height
         self.width = width
         self.objects = collections.defaultdict(collections.OrderedDict)
         self.background_color = background_color
+        self.current_map = None
 
-    def add_object(self, uid, obj: GameObject.Object, layer):
+    def add_object(self, obj: GameObject.Object):
         for objects in self.objects.values():
-            existing_object = objects.get(uid)
+            existing_object = objects.get(obj.name)
             if existing_object:
                 if obj is existing_object:
                     return
 
-                raise RuntimeError('Attempt to add duplicate object with uid \'{uid}\''.format(uid=uid))
+                raise RuntimeError('Attempt to add duplicate object with uid \'{uid}\''.format(uid=obj.name))
 
-        self.objects[layer][uid] = obj
+        self.objects[obj.layer][obj.name] = obj
         obj.added(self)
 
     def remove_object(self, uid, safe=False):
@@ -60,4 +62,17 @@ class Window:
             for obj in self.objects[layer].values():
                 obj.draw(self._window)
 
-            pygame.display.update()
+            pygame.display.flip()
+
+    def set_map(self, game_map):
+        if self.current_map is not None:
+            for o in self.current_map.get_objects():
+                self.remove_object(o.name)
+
+            self.remove_object(self.current_map.name)
+
+        self.current_map = game_map
+        for o in game_map.get_objects():
+            self.add_object(o)
+
+        self.add_object(game_map)
