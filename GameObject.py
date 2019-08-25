@@ -138,6 +138,67 @@ class AnimatedObject(Object):
         return True
 
 
+class NPCharacter(AnimatedObject):
+    def __init__(self, sprite, x, y, width=None, height=None, name=None, layer=None):
+        super().__init__(sprite, x, y, width, height, name=name, layer=layer)
+        self.target_x = None
+        self.target_y = None
+        self.currently_moving = False
+        self.speed = 1.5
+        self.approaching = None
+
+    def update(self, window, input_handler):
+        super().update(window, input_handler)
+        self.currently_moving = False
+
+        if self.approaching is not None:
+            self.target_x = self.approaching.x
+            self.target_y = self.approaching.y
+
+        move_x = 0
+        if self.target_x is not None:
+            move_x = self.target_x - self.x
+            if move_x != 0:
+                self.currently_moving = True
+                if abs(move_x) > self.speed:
+                    move_x = self.speed if move_x > 0 else -self.speed
+
+                if move_x > 0:
+                    self.set_direction(3)
+
+                else:
+                    self.set_direction(2)
+
+        move_y = 0
+        if self.target_y is not None:
+            move_y = self.target_y - self.y
+            if move_y != 0:
+                self.currently_moving = True
+                if abs(move_y) > self.speed:
+                    move_y = self.speed if move_y > 0 else -self.speed
+
+                if move_y > 0:
+                    self.set_direction(0)
+
+                else:
+                    self.set_direction(1)
+
+        self.move(move_x, move_y, check_collision=False)
+
+    def move_to(self, x, y):
+        self.target_x = x
+        self.target_y = y
+
+    def teleport_to(self, x, y):
+        super().move_to(x, y)
+
+    def is_moving(self):
+        return self.currently_moving
+
+    def approach(self, obj):
+        self.approaching = obj
+
+
 class PlayableCharacter(AnimatedObject):
     def __init__(self, sprite, x, y, width=None, height=None, name=None, layer=None):
         super().__init__(sprite, x, y, width, height, name=name, layer=layer)
