@@ -2,6 +2,7 @@ import pygame
 import os
 
 import GameObject
+import GameWindow
 import Camera
 import Tileset
 
@@ -16,7 +17,7 @@ class MapTile(GameObject.Object):
 
 
 class Map(GameObject.Object):
-    def __init__(self, image_manager, path, sprite_size=32, layer=None):
+    def __init__(self, image_manager, path, sprite_size=32):
         self.map_tiles = []
         self.sprite = None
         self.sprite_size = sprite_size
@@ -43,17 +44,23 @@ class Map(GameObject.Object):
 
                     self.map_tiles[-1].append(tile)
 
-        super().__init__(self.get_sprite(), 0, 0, name=os.path.basename(path), layer=layer)
+        super().__init__(self.get_sprite(), 0, 0, name=os.path.basename(path), layer=GameWindow.Window.LAYER_BACKGROUND)
 
     def redraw(self):
-        map_height = len(self.map_tiles) * self.sprite_size
-        map_width = len(self.map_tiles[0]) * self.sprite_size
+        map_height = self.get_map_tile_height() * self.sprite_size
+        map_width = self.get_map_tile_width() * self.sprite_size
 
         self.sprite = pygame.Surface((map_width, map_height))
 
         for y in range(len(self.map_tiles)):
             for x in range(len(self.map_tiles[y])):
                 self.sprite.blit(self.map_tiles[y][x].get_sprite(), self.tile_to_pixel(x, y))
+
+    def get_map_tile_height(self):
+        return len(self.map_tiles)
+
+    def get_map_tile_width(self):
+        return len(self.map_tiles[0]) if self.map_tiles else 0
 
     def tile_to_pixel(self, x, y):
         return x * self.sprite_size, y * self.sprite_size
@@ -65,6 +72,9 @@ class Map(GameObject.Object):
         return self.is_tile_solid(*self.pixel_to_tile(x, y))
 
     def is_tile_solid(self, x, y):
+        x = int(x)
+        y = int(y)
+
         if y >= len(self.map_tiles) or x >= len(self.map_tiles[y]):
             return True
 

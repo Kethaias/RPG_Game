@@ -13,7 +13,9 @@ class Object:
         self.width = width or self.get_sprite().get_width()
         self.height = height or self.get_sprite().get_height()
         self.map = None
-        self.layer = layer
+        self.layer = layer or GameWindow.Window.LAYER_INVISIBLE
+        self.solid = True
+        self.static_position = False
 
         if name is None:
             name = Object.next_id
@@ -21,19 +23,32 @@ class Object:
 
         self.name = name
 
-    def move(self, x, y, check_collision=False):
+    def move(self, x, y, check_collision=None):
+        if check_collision is None:
+            check_collision = self.is_solid
+
         if check_collision and self.would_collide(x, y):
-            return
+            return False
 
         self.x += x
         self.y += y
+
+        return True
 
     def move_to(self, x, y):
         self.x = x
         self.y = y
 
     def draw(self, window):
-        window.blit(self.get_sprite(), self.top_left(adjust_camera=True))
+        if self.layer is None or self.layer < 0:
+            return
+
+        sprite = self.get_sprite()
+        if sprite is None:
+            return
+
+        adjust_camera = not self.static_position
+        window.blit(sprite, self.top_left(adjust_camera=adjust_camera))
 
     def get_sprite(self):
         return self.sprite
@@ -94,7 +109,7 @@ class Object:
             if o is self:
                 continue
 
-            if not o.is_solid:
+            if not o.is_solid():
                 continue
 
             if self.get_rect().colliderect(o.get_rect()):
@@ -103,7 +118,7 @@ class Object:
         return False
 
     def is_solid(self):
-        return True
+        return self.solid
 
     def set_map(self, game_map):
         self.map = game_map
@@ -123,6 +138,7 @@ class AnimatedObject(Object):
 
     def update(self, window, input_handler):
         if not self.is_moving():
+            self.next_frame = 0
             return
 
         self.next_frame = (self.next_frame + 1) % (self.animation_frames * len(self.sprite[self.direction]))
@@ -148,7 +164,6 @@ class NPCharacter(AnimatedObject):
         self.approaching = None
 
     def update(self, window, input_handler):
-        super().update(window, input_handler)
         self.currently_moving = False
 
         if self.approaching is not None:
@@ -156,6 +171,7 @@ class NPCharacter(AnimatedObject):
             self.target_y = self.approaching.y
 
         move_x = 0
+        direction = self.direction
         if self.target_x is not None:
             move_x = self.target_x - self.x
             if move_x != 0:
@@ -164,10 +180,10 @@ class NPCharacter(AnimatedObject):
                     move_x = self.speed if move_x > 0 else -self.speed
 
                 if move_x > 0:
-                    self.set_direction(3)
+                    direction = 3
 
                 else:
-                    self.set_direction(2)
+                    direction = 2
 
         move_y = 0
         if self.target_y is not None:
@@ -178,12 +194,17 @@ class NPCharacter(AnimatedObject):
                     move_y = self.speed if move_y > 0 else -self.speed
 
                 if move_y > 0:
-                    self.set_direction(0)
+                    direction = 0
 
                 else:
-                    self.set_direction(1)
+                    direction = 1
 
-        self.move(move_x, move_y, check_collision=False)
+        if self.approaching is not None and move_x == 0 and move_y == 0:
+            self.approaching = None
+
+        self.set_direction(direction)
+        self.move(move_x, move_y)
+        super().update(window, input_handler)
 
     def move_to(self, x, y):
         self.target_x = x
@@ -197,6 +218,9 @@ class NPCharacter(AnimatedObject):
 
     def approach(self, obj):
         self.approaching = obj
+
+    def at_destination(self):
+        return self.approaching is None
 
 
 class PlayableCharacter(AnimatedObject):
@@ -232,7 +256,42 @@ class PlayableCharacter(AnimatedObject):
         else:
             self.currently_moving = False
 
-        self.move(move_x, move_y, check_collision=True)
+        self.move(move_x, move_y)
 
     def is_moving(self):
         return self.currently_moving
+
+
+class InvisibleObject(Object):
+    def __init__(self, x, y, name=None, solid=False):
+        super().__init__(None, x-1, y-1, width=2, height=2, name=name)
+        self.solid = solid
+
+
+class StaticObject(Object):
+    def __init__(self, sprite, x, y, width=None, height=None, name=None):
+        super().__init__(sprite, x, y, width=width, height=height, name=name, layer=GameWindow.Window.LAYER_STATIC)
+        self.static_position = True
+
+
+class Checkpoint(Object):
+    next_id = 0
+    checkpoints = list()
+
+    def __init__(self, sprite, x, y):
+        name = 'checkpoint_{id}'.format(id=Checkpoint.next_id)
+        Checkpoint.next_id += 1
+        Checkpoint.checkpoints.append(self)
+
+        super().__init__(sprite, x, y, 10, 10, name=name, layer=GameWindow.Window.LAYER_FOREGROUND)
+
+        self.solid = False
+
+    def get_next_checkpoint(self):
+        self_index = Checkpoint.checkpoints.index(self)
+        next_index = self_index + 1
+
+        if next_index >= len(Checkpoint.checkpoints):
+            next_index = 0
+
+        return Checkpoint.checkpoints[next_index]

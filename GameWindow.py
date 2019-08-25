@@ -5,13 +5,24 @@ import GameObject
 
 
 class Window:
-    LAYER_BACKGROUND = 0
-    LAYER_FOREGROUND = 1
+    LAYER_INVISIBLE = -1
 
-    def __init__(self, name, width, height, background_color=(0, 0, 0)):
+    LAYER_BACKGROUND = 1
+    LAYER_FOREGROUND = 2
+    LAYER_CHARACTER = 3
+
+    LAYER_STATIC = 10
+
+    def __init__(self, name, width, height, background_color=(0, 0, 0), fullscreen=False):
         self._window = pygame.display.set_mode((width, height))
         pygame.display.set_caption(name)
-        pygame.display.set_mode((0, 0), pygame.FULLSCREEN | pygame.DOUBLEBUF)
+
+        display_type = pygame.DOUBLEBUF
+        if fullscreen:
+            display_type |= pygame.FULLSCREEN
+
+        pygame.display.set_mode((0, 0), display_type)
+
         self.height = height
         self.width = width
         self.objects = collections.defaultdict(collections.OrderedDict)
